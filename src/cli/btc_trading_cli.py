@@ -27,7 +27,7 @@ try:
     from ..sentiment.enhanced_sentiment_analyzer import EnhancedSentimentAnalyzer
     from ..trading.bitcoin_trading_system_with_ollama import BitcoinTradingSystemWithOllama
     from ..core.sentiment_benchmark import SentimentBenchmark
-    from metrics_collector import metrics_collector
+    from ..utils.metrics_collector import metrics_collector
 except ImportError as e:
     click.echo(f"❌ Erro importando módulos: {e}", err=True)
     click.echo("Certifique-se de que está no diretório correto e que o sistema está instalado.", err=True)

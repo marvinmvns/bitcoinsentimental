@@ -1,0 +1,190 @@
+# ============================================================================
+# Docker Compose - Sistema Trading Bitcoin com Ollama LLM
+# ============================================================================
+# Configuração para deployment completo do sistema
+# ============================================================================
+
+version: '3.8'
+
+services:
+  # ============================================================================
+  # Serviço Principal - Trading System
+  # ============================================================================
+  bitcoin-trading:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: bitcoin-trading-system:latest
+    container_name: bitcoin-trading-main
+    restart: unless-stopped
+    
+    # Portas expostas
+    ports:
+      - "8080:8080"    # Métricas e monitoramento
+      - "11434:11434"  # Ollama API
+    
+    # Volumes para persistência
+    volumes:
+      - trading_data:/opt/bitcoin-trading-system/data
+      - trading_logs:/opt/bitcoin-trading-system/logs
+      - trading_results:/opt/bitcoin-trading-system/results
+      - trading_models:/home/bitcoin-trader/.ollama
+    
+    # Variáveis de ambiente
+    environment:
+      - TRADING_ENV=production
+      - DEBUG=false
+      - ENABLE_METRICS=true
+      - LOG_LEVEL=INFO
+      - PYTHONUNBUFFERED=1
+    
+    # Configurações de recursos
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+          cpus: '4.0'
+        reservations:
+          memory: 4G
+          cpus: '2.0'
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+    # Configurações de rede
+    networks:
+      - trading_network
+
+  # ============================================================================
+  # Serviço de Monitoramento (Opcional)
+  # ============================================================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: bitcoin-trading-prometheus
+    restart: unless-stopped
+    
+    ports:
+      - "9090:9090"
+    
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    
+    networks:
+      - trading_network
+    
+    depends_on:
+      - bitcoin-trading
+
+  # ============================================================================
+  # Dashboard de Monitoramento (Opcional)
+  # ============================================================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: bitcoin-trading-grafana
+    restart: unless-stopped
+    
+    ports:
+      - "3000:3000"
+    
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_USERS_ALLOW_SIGN_UP=false
+    
+    networks:
+      - trading_network
+    
+    depends_on:
+      - prometheus
+
+  # ============================================================================
+  # Banco de Dados para Histórico (Opcional)
+  # ============================================================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: bitcoin-trading-db
+    restart: unless-stopped
+    
+    environment:
+      - POSTGRES_DB=trading_db
+      - POSTGRES_USER=trading_user
+      - POSTGRES_PASSWORD=trading_pass123
+    
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    
+    ports:
+      - "5432:5432"
+    
+    networks:
+      - trading_network
+
+  # ============================================================================
+  # Redis para Cache (Opcional)
+  # ============================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: bitcoin-trading-redis
+    restart: unless-stopped
+    
+    command: redis-server --appendonly yes --requirepass redis_pass123
+    
+    volumes:
+      - redis_data:/data
+    
+    ports:
+      - "6379:6379"
+    
+    networks:
+      - trading_network
+
+# ============================================================================
+# Volumes Nomeados
+# ============================================================================
+volumes:
+  trading_data:
+    driver: local
+  trading_logs:
+    driver: local
+  trading_results:
+    driver: local
+  trading_models:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+# ============================================================================
+# Rede Personalizada
+# ============================================================================
+networks:
+  trading_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+

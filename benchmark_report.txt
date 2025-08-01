@@ -1,0 +1,38 @@
+================================================================================
+📊 RELATÓRIO DE BENCHMARK - ANÁLISE DE SENTIMENTO
+================================================================================
+Data: 2025-07-31 19:39:26
+Total de amostras: 30
+
+🎯 MÉTRICAS GERAIS
+----------------------------------------
+Acurácia Ollama LLM:     93.3%
+Acurácia Sistema Final:  76.7%
+Tempo médio Ollama:      12.25s
+Tempo médio Total:       12.25s
+Confiança média Ollama:  0.30
+Confiança média Final:   0.36
+
+📈 ACURÁCIA POR SENTIMENTO
+----------------------------------------
+POSITIVE:
+  Ollama:  100.0% (10 amostras)
+  Final:   50.0%
+
+NEGATIVE:
+  Ollama:  100.0% (10 amostras)
+  Final:   100.0%
+
+NEUTRAL:
+  Ollama:  80.0% (10 amostras)
+  Final:   80.0%
+
+🔍 ANÁLISE COMPARATIVA
+----------------------------------------
+⚠️  Ollama sozinho 16.7% mais preciso que sistema final
+
+💡 RECOMENDAÇÕES
+----------------------------------------
+✅ Ollama LLM mostra excelente performance para análise de sentimento
+⏱️  Tempo de resposta do Ollama pode ser otimizado
+🎯 Confiança do modelo pode ser melhorada com prompts mais específicos
